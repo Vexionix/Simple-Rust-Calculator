@@ -1,6 +1,7 @@
 fn eval_expression(expr: &str) -> bool {
     let mut chars = expr.chars().peekable();
     let mut number_buffer = String::new();
+    let mut function_buffer = String::new();
 
     while let Some(&c) = chars.peek() {
         if c.is_whitespace() {
@@ -23,7 +24,23 @@ fn eval_expression(expr: &str) -> bool {
         } else {
             match c {
                 '+' | '-' | '*' | '/' | '^' | '(' | ')' => {}
-                _ => return false,
+                _ => {
+                    if c.is_ascii_alphabetic() {
+                        while let Some(&c) = chars.peek() {
+                            if c.is_ascii_alphabetic() {
+                                function_buffer.push(c);
+                                chars.next();
+                            } else {
+                                break;
+                            }
+                        }
+                        match function_buffer.as_str() {
+                            "log" | "sin" | "cos" => {}
+                            _ => return false,
+                        }
+                        function_buffer.clear();
+                    }
+                }
             };
             chars.next();
         }
@@ -32,7 +49,7 @@ fn eval_expression(expr: &str) -> bool {
 }
 
 fn main() {
-    let input = "1.53 + 3 - 2";
+    let input = "1.53 + 3 * sin(3) - 2";
     if eval_expression(input) {
         println!("Correct.");
     } else {
