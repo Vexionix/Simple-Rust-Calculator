@@ -1,9 +1,5 @@
 fn is_digit(c: char) -> bool {
-    if c >= '0' && c <= '9' {
-        true
-    } else {
-        false
-    }
+    c >= '0' && c <= '9'
 }
 
 fn eval_expression(expr: &str) -> bool {
