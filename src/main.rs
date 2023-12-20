@@ -1,5 +1,3 @@
-use core::panic;
-
 enum Term {
     Number(f64),
     Op(char),
