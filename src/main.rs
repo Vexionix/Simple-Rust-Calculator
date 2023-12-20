@@ -1,7 +1,3 @@
-fn is_digit(c: char) -> bool {
-    c >= '0' && c <= '9'
-}
-
 fn eval_expression(expr: &str) -> bool {
     let mut chars = expr.chars().peekable();
     let mut number_buffer = String::new();
@@ -9,22 +5,19 @@ fn eval_expression(expr: &str) -> bool {
     while let Some(&c) = chars.peek() {
         if c.is_whitespace() {
             chars.next();
-        } else if is_digit(c) || c == '.' {
+        } else if c.is_ascii_digit() || c == '.' {
             while let Some(&c) = chars.peek() {
-                if is_digit(c) || c == '.' {
+                if c.is_ascii_digit() || c == '.' {
                     number_buffer.push(c);
                     chars.next();
                 } else {
                     break;
                 }
             }
-            let number: f64;
-            match number_buffer.parse::<f64>() {
-                Ok(float_value) => {
-                    number = float_value;
-                }
+            let number: f64 = match number_buffer.parse::<f64>() {
+                Ok(float_value) => float_value,
                 Err(_) => return false,
-            }
+            };
             number_buffer.clear();
             println!("{}", number);
         } else {
@@ -35,12 +28,12 @@ fn eval_expression(expr: &str) -> bool {
             chars.next();
         }
     }
-    return true;
+    true
 }
 
 fn main() {
     let input = "1.53 + 3 - 2";
-    if eval_expression(input) == true {
+    if eval_expression(input) {
         println!("Correct.");
     } else {
         println!("Incorrect.");
