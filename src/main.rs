@@ -1,3 +1,11 @@
+fn is_digit(c: char) -> bool {
+    if c >= '0' && c <= '9' {
+        true
+    } else {
+        false
+    }
+}
+
 fn eval_expression(expr: &str) -> bool {
     let mut chars = expr.chars().peekable();
     let mut number_buffer = String::new();
@@ -5,9 +13,9 @@ fn eval_expression(expr: &str) -> bool {
     while let Some(&c) = chars.peek() {
         if c.is_whitespace() {
             chars.next();
-        } else if (c >= '0' && c <= '9') || c == '.' {
+        } else if is_digit(c) || c == '.' {
             while let Some(&c) = chars.peek() {
-                if (c >= '0' && c <= '9') || c == '.' {
+                if is_digit(c) || c == '.' {
                     number_buffer.push(c);
                     chars.next();
                 } else {
