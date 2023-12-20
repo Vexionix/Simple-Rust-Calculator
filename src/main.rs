@@ -28,7 +28,7 @@ fn lex(expr: &str) -> Vec<Term> {
             }
             let number: f64 = match number_buffer.parse::<f64>() {
                 Ok(float_value) => float_value,
-                Err(_) => panic!("Invalid expression."),
+                Err(_) => panic!("Failed lexing. NAN: {}.", number_buffer),
             };
             terms.push(Term::Number(number));
             number_buffer.clear();
@@ -45,7 +45,10 @@ fn lex(expr: &str) -> Vec<Term> {
                 "log" => Term::Log,
                 "sin" => Term::Sin,
                 "cos" => Term::Cos,
-                _ => panic!("Invalid expression."),
+                _ => panic!(
+                    "Failed lexing. Provided inexistent function: {}",
+                    function_buffer
+                ),
             });
             function_buffer.clear();
         } else {
@@ -53,7 +56,10 @@ fn lex(expr: &str) -> Vec<Term> {
                 '+' | '-' | '*' | '/' | '^' => Term::Op(c),
                 '(' => Term::LeftParen,
                 ')' => Term::RightParen,
-                _ => panic!("Invalid expression"),
+                _ => panic!(
+                    "Failed lexing. Provided inexistent operator or parenthesis: {}",
+                    c
+                ),
             });
             chars.next();
         }
