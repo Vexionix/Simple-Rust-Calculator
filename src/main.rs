@@ -69,21 +69,55 @@ fn lex(expr: &str) -> Vec<Term> {
     terms
 }
 
-fn main() {
-    let input = "1 + 2 * sin(2 + sqrt(log(3 / 2))) + 3 * 2";
-    let terms = lex(input);
-    for i in terms {
-        match i {
-            Term::Number(float_value) => println!("{}", float_value),
-            Term::Op(c) => println!("{}", c),
-            Term::Sin => println!("sin"),
-            Term::Cos => println!("cos"),
-            Term::Tan => println!("tan"),
-            Term::Ctg => println!("ctg"),
-            Term::Sqrt => println!("sqrt"),
-            Term::Log => println!("log"),
-            Term::LeftParen => println!("("),
-            Term::RightParen => println!(")"),
+fn infix_to_postfix(terms: Vec<Term>) -> Vec<Term> {
+    let mut postfix = Vec::new();
+    let mut stack = Vec::new();
+
+    for term in terms {
+        match term {
+            Term::Number(_) => postfix.push(term),
+            Term::Op(_) => {
+                while !stack.is_empty() && (priority(stack.last().unwrap()) >= priority(&term)) {
+                    postfix.push(stack.pop().unwrap());
+                }
+                stack.push(term);
+            }
+            Term::Function(_) => stack.push(term),
+            Term::LeftParen => stack.push(term),
+            Term::RightParen => {
+                while let Some(top) = stack.pop() {
+                    if top == Term::LeftParen {
+                        break;
+                    }
+                    postfix.push(top);
+                }
+                if let Some(Term::Function(_)) = stack.last() {
+                    postfix.push(stack.pop().unwrap());
+                }
+            }
         }
     }
+
+    while let Some(term) = stack.pop() {
+        postfix.push(term);
+    }
+
+    postfix
+}
+
+fn priority(op: &Term) -> i32 {
+    match op {
+        Term::Op('+') | Term::Op('-') => 1,
+        Term::Op('*') | Term::Op('/') => 2,
+        Term::Op('^') => 3,
+        _ => 0,
+    }
+}
+
+fn main() {
+    let input = "1 + 2 * sin((((2 + sqrt(log(3 / 2)))))) + 3 * 2";
+    let terms = lex(input);
+    let postfix = infix_to_postfix(terms.clone());
+    println!("before:   {:?}", terms);
+    println!("after: {:?}", postfix);
 }
