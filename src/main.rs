@@ -1,13 +1,8 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 enum Term {
     Number(f64),
     Op(char),
-    Sin,
-    Cos,
-    Tan,
-    Ctg,
-    Sqrt,
-    Log,
+    Function(String),
     LeftParen,
     RightParen,
 }
@@ -46,12 +41,12 @@ fn lex(expr: &str) -> Vec<Term> {
                 }
             }
             terms.push(match function_buffer.as_str() {
-                "log" => Term::Log,
-                "sin" => Term::Sin,
-                "cos" => Term::Cos,
-                "tan" => Term::Tan,
-                "ctg" => Term::Ctg,
-                "sqrt" => Term::Sqrt,
+                "log" => Term::Function("log".to_string()),
+                "sin" => Term::Function("sin".to_string()),
+                "cos" => Term::Function("cos".to_string()),
+                "tan" => Term::Function("tan".to_string()),
+                "ctg" => Term::Function("ctg".to_string()),
+                "sqrt" => Term::Function("sqrt".to_string()),
                 _ => panic!(
                     "Failed lexing. Provided inexistent function: {}",
                     function_buffer
@@ -75,7 +70,7 @@ fn lex(expr: &str) -> Vec<Term> {
 }
 
 fn main() {
-    let input = "1 + 2 * sin(2 + sqrt(log(3 / 2)))";
+    let input = "1 + 2 * sin(2 + sqrt(log(3 / 2))) + 3 * 2";
     let terms = lex(input);
     for i in terms {
         match i {
