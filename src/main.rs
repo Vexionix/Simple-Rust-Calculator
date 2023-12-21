@@ -114,10 +114,70 @@ fn priority(op: &Term) -> i32 {
     }
 }
 
+fn eval_first(terms: Vec<Term>) -> Vec<Term> {
+    let mut new: Vec<Term> = Vec::new();
+    for i in 0..terms.len() {
+        match (*terms).get(i).unwrap().clone() {
+            Term::Op(c) => {
+                let n1: f64;
+                let n2: f64;
+                match new.pop().unwrap() {
+                    Term::Number(n) => n2 = n,
+                    _ => panic!("Syntax error"),
+                }
+                match new.pop().unwrap() {
+                    Term::Number(n) => n1 = n,
+                    _ => panic!("Syntax error"),
+                }
+                match c {
+                    '+' => new.push(Term::Number(n1 + n2)),
+                    '-' => new.push(Term::Number(n1 - n2)),
+                    '*' => new.push(Term::Number(n1 * n2)),
+                    '/' => new.push(Term::Number(n1 / n2)),
+                    '^' => new.push(Term::Number(n1.powf(n2))),
+                    _ => panic!("Syntax error"),
+                }
+                for j in i + 1..terms.len() {
+                    new.push((*terms).get(j).unwrap().clone())
+                }
+                return new;
+            }
+            Term::Function(func) => {
+                let n: f64;
+                match new.pop().unwrap() {
+                    Term::Number(num) => n = num,
+                    _ => panic!("Syntax error"),
+                }
+                match func.as_str() {
+                    "log" => new.push(Term::Number(f64::log10(n))),
+                    "sqrt" => new.push(Term::Number(f64::sqrt(n))),
+                    "sin" => new.push(Term::Number(f64::sin(n))),
+                    "cos" => new.push(Term::Number(f64::cos(n))),
+                    "tan" => new.push(Term::Number(f64::tan(n))),
+                    "ctg" => new.push(Term::Number(1.0 / f64::tan(n))),
+                    _ => panic!("Syntax error"),
+                }
+                for j in i + 1..terms.len() {
+                    new.push((*terms).get(j).unwrap().clone())
+                }
+                return new;
+            }
+            _ => new.push((*terms).get(i).unwrap().clone()),
+        }
+    }
+
+    new
+}
+
 fn main() {
     let input = "1 + 2 * sin((((2 + sqrt(log(3 / 2)))))) + 3 * 2";
     let terms = lex(input);
-    let postfix = infix_to_postfix(terms.clone());
+    let mut postfix = infix_to_postfix(terms.clone());
     println!("before:   {:?}", terms);
     println!("after: {:?}", postfix);
+    while postfix.len() > 1 {
+        postfix = eval_first(postfix);
+        print!("\n");
+        println!("update: {:?}", postfix);
+    }
 }
