@@ -1,8 +1,12 @@
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Term {
     Number(f64),
     Op(char),
     Sin,
     Cos,
+    Tan,
+    Ctg,
+    Sqrt,
     Log,
     LeftParen,
     RightParen,
@@ -45,6 +49,9 @@ fn lex(expr: &str) -> Vec<Term> {
                 "log" => Term::Log,
                 "sin" => Term::Sin,
                 "cos" => Term::Cos,
+                "tan" => Term::Tan,
+                "ctg" => Term::Ctg,
+                "sqrt" => Term::Sqrt,
                 _ => panic!(
                     "Failed lexing. Provided inexistent function: {}",
                     function_buffer
@@ -68,7 +75,7 @@ fn lex(expr: &str) -> Vec<Term> {
 }
 
 fn main() {
-    let input = "1.53 + 3 * sin(3) - 2";
+    let input = "1 + 2 * sin(2 + sqrt(log(3 / 2)))";
     let terms = lex(input);
     for i in terms {
         match i {
@@ -76,6 +83,9 @@ fn main() {
             Term::Op(c) => println!("{}", c),
             Term::Sin => println!("sin"),
             Term::Cos => println!("cos"),
+            Term::Tan => println!("tan"),
+            Term::Ctg => println!("ctg"),
+            Term::Sqrt => println!("sqrt"),
             Term::Log => println!("log"),
             Term::LeftParen => println!("("),
             Term::RightParen => println!(")"),
