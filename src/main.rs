@@ -85,11 +85,11 @@ fn infix_to_postfix(terms: Vec<Term>) -> Vec<Term> {
             Term::Function(_) => stack.push(term),
             Term::LeftParen => stack.push(term),
             Term::RightParen => {
-                while let Some(top) = stack.pop() {
-                    if top == Term::LeftParen {
+                while let Some(term) = stack.pop() {
+                    if term == Term::LeftParen {
                         break;
                     }
-                    postfix.push(top);
+                    postfix.push(term);
                 }
                 if let Some(Term::Function(_)) = stack.last() {
                     postfix.push(stack.pop().unwrap());
@@ -119,16 +119,14 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
     for i in 0..terms.len() {
         match terms[i].clone() {
             Term::Op(c) => {
-                let n1: f64;
-                let n2: f64;
-                match new.pop().unwrap() {
-                    Term::Number(n) => n2 = n,
+                let n2 = match new.pop().unwrap() {
+                    Term::Number(n) => n,
                     _ => panic!("Syntax error"),
-                }
-                match new.pop().unwrap() {
-                    Term::Number(n) => n1 = n,
+                };
+                let n1 = match new.pop().unwrap() {
+                    Term::Number(n) => n,
                     _ => panic!("Syntax error"),
-                }
+                };
                 match c {
                     '+' => new.push(Term::Number(n1 + n2)),
                     '-' => new.push(Term::Number(n1 - n2)),
@@ -137,17 +135,16 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
                     '^' => new.push(Term::Number(n1.powf(n2))),
                     _ => panic!("Syntax error"),
                 }
-                for j in i + 1..terms.len() {
-                    new.push(terms[j].clone())
+                for term in terms.iter().skip(i + 1) {
+                    new.push(term.clone())
                 }
                 return new;
             }
             Term::Function(func) => {
-                let n: f64;
-                match new.pop().unwrap() {
-                    Term::Number(num) => n = num,
+                let n = match new.pop().unwrap() {
+                    Term::Number(num) => num,
                     _ => panic!("Syntax error"),
-                }
+                };
                 match func.as_str() {
                     "log" => new.push(Term::Number(f64::log10(n))),
                     "sqrt" => new.push(Term::Number(f64::sqrt(n))),
@@ -157,8 +154,8 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
                     "ctg" => new.push(Term::Number(1.0 / f64::tan(n))),
                     _ => panic!("Syntax error"),
                 }
-                for j in i + 1..terms.len() {
-                    new.push(terms[j].clone())
+                for term in terms.iter().skip(i + 1) {
+                    new.push(term.clone())
                 }
                 return new;
             }
@@ -171,17 +168,16 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
 
 fn syntax_check(terms: Vec<Term>) {
     let mut count = 0;
-    let mut i = 0;
-    for term in terms.clone() {
+    for (i, term) in terms.clone().into_iter().enumerate() {
         match term {
             Term::LeftParen => {
                 count += 1;
                 if i + 1 == terms.len() {
                     panic!("Syntax error. Expression shouldn't end this way.");
-                } else if !match terms[i + 1] {
-                    Term::Number(_) | Term::Function(_) | Term::LeftParen => true,
-                    _ => false,
-                } {
+                } else if !matches!(
+                    terms[i + 1],
+                    Term::Number(_) | Term::Function(_) | Term::LeftParen
+                ) {
                     panic!("Syntax error. Check \'(\'.");
                 }
             }
@@ -189,38 +185,23 @@ fn syntax_check(terms: Vec<Term>) {
                 count -= 1;
                 if i == 0 {
                     panic!("Syntax error. Expression shouldn't start this way.");
-                } else if !match terms[i - 1] {
-                    Term::Number(_) | Term::RightParen => true,
-                    _ => false,
-                } {
+                } else if !matches!(terms[i - 1], Term::Number(_) | Term::RightParen) {
                     panic!("Syntax error. Check \')\' precedence.");
                 }
-                if i + 1 != terms.len() {
-                    if !match terms[i + 1] {
-                        Term::Op(_) | Term::RightParen => true,
-                        _ => false,
-                    } {
-                        panic!("Syntax error. Check which terms are used after \')\'.");
-                    }
+                if i + 1 != terms.len() && !matches!(terms[i + 1], Term::Op(_) | Term::RightParen) {
+                    panic!("Syntax error. Check which terms are used after \')\'.");
                 }
             }
+
             Term::Number(_) => {
-                if i + 1 < terms.len() {
-                    if !match terms[i + 1] {
-                        Term::Op(_) | Term::RightParen => true,
-                        _ => false,
-                    } {
-                        panic!("Syntax error. Check what comes after numbers.");
-                    }
+                if i + 1 < terms.len() && !matches!(terms[i + 1], Term::Op(_) | Term::RightParen) {
+                    panic!("Syntax error. Check what comes after numbers.");
                 }
             }
             Term::Function(_) => {
                 if i + 1 == terms.len() {
                     panic!("Syntax error. Expression shouldn't end this way.");
-                } else if !match terms[i + 1] {
-                    Term::LeftParen => true,
-                    _ => false,
-                } {
+                } else if !matches!(terms[i + 1], Term::LeftParen) {
                     panic!("Syntax error. Check what comes after functions.");
                 }
             }
@@ -230,22 +211,18 @@ fn syntax_check(terms: Vec<Term>) {
                         "Syntax error. Expression starts or ends in a wrong way. Check operands"
                     );
                 } else {
-                    if !match terms[i - 1] {
-                        Term::Number(_) | Term::RightParen => true,
-                        _ => false,
-                    } {
+                    if !matches!(terms[i - 1], Term::Number(_) | Term::RightParen) {
                         panic!("Syntax error. Check what comes before operators.");
                     }
-                    if !match terms[i + 1] {
-                        Term::Number(_) | Term::Function(_) | Term::LeftParen => true,
-                        _ => false,
-                    } {
+                    if !matches!(
+                        terms[i + 1],
+                        Term::Number(_) | Term::Function(_) | Term::LeftParen
+                    ) {
                         panic!("Syntax error. Check what comes after operators.");
                     }
                 }
             }
         }
-        i += 1;
     }
 
     if count != 0 {
@@ -262,7 +239,7 @@ fn main() {
     println!("after: {:?}", postfix);
     while postfix.len() > 1 {
         postfix = eval_first(postfix);
-        print!("\n");
+        println!();
         println!("update: {:?}", postfix);
     }
 }
