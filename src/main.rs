@@ -1,3 +1,7 @@
+//! An application that emulates a calculator
+
+/// It prints the value of the expression after every step.
+
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
     Number(f64),
@@ -7,6 +11,7 @@ enum Token {
     RightParen,
 }
 
+// function for lexing the initial expression (works for valid expressions)
 fn lex(expr: &str) -> Vec<Token> {
     let mut chars = expr.chars().peekable();
     let mut number_buffer = String::new();
@@ -69,6 +74,7 @@ fn lex(expr: &str) -> Vec<Token> {
     tokens
 }
 
+// returns the postfix format of the items found in tokens
 fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     let mut postfix = Vec::new();
     let mut stack = Vec::new();
@@ -105,6 +111,7 @@ fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     postfix
 }
 
+// used for priority order when converting to postfix
 fn priority(op: &Token) -> i32 {
     match op {
         Token::Op('+') | Token::Op('-') => 1,
@@ -114,6 +121,7 @@ fn priority(op: &Token) -> i32 {
     }
 }
 
+// function used to evaluate the current step (only calculates the highest priority operation)
 fn eval_first(tokens: Vec<Token>) -> Vec<Token> {
     let mut new: Vec<Token> = Vec::new();
     for i in 0..tokens.len() {
@@ -166,6 +174,7 @@ fn eval_first(tokens: Vec<Token>) -> Vec<Token> {
     new
 }
 
+// function used for syntax checking. If the expression is invalid the program will stop running
 fn syntax_check(tokens: Vec<Token>) {
     let mut count = 0;
     for (i, token) in tokens.clone().into_iter().enumerate() {
@@ -230,6 +239,7 @@ fn syntax_check(tokens: Vec<Token>) {
     }
 }
 
+// converts the postfix tokens into a string that contains the infix format of the expression
 fn get_infix_string_from_postfix(postfix_tokens: Vec<Token>) -> String {
     let mut infix: Vec<String> = Vec::new();
 
