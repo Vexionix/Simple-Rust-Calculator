@@ -117,7 +117,7 @@ fn priority(op: &Term) -> i32 {
 fn eval_first(terms: Vec<Term>) -> Vec<Term> {
     let mut new: Vec<Term> = Vec::new();
     for i in 0..terms.len() {
-        match (*terms).get(i).unwrap().clone() {
+        match terms[i].clone() {
             Term::Op(c) => {
                 let n1: f64;
                 let n2: f64;
@@ -138,7 +138,7 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
                     _ => panic!("Syntax error"),
                 }
                 for j in i + 1..terms.len() {
-                    new.push((*terms).get(j).unwrap().clone())
+                    new.push(terms[j].clone())
                 }
                 return new;
             }
@@ -158,11 +158,11 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
                     _ => panic!("Syntax error"),
                 }
                 for j in i + 1..terms.len() {
-                    new.push((*terms).get(j).unwrap().clone())
+                    new.push(terms[j].clone())
                 }
                 return new;
             }
-            _ => new.push((*terms).get(i).unwrap().clone()),
+            _ => new.push(terms[i].clone()),
         }
     }
 
