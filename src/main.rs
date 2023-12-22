@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, PartialEq)]
-enum Term {
+enum Token {
     Number(f64),
     Op(char),
     Function(String),
@@ -7,11 +7,11 @@ enum Term {
     RightParen,
 }
 
-fn lex(expr: &str) -> Vec<Term> {
+fn lex(expr: &str) -> Vec<Token> {
     let mut chars = expr.chars().peekable();
     let mut number_buffer = String::new();
     let mut function_buffer = String::new();
-    let mut terms = Vec::new();
+    let mut tokens = Vec::new();
 
     while let Some(&c) = chars.peek() {
         if c.is_whitespace() {
@@ -29,7 +29,7 @@ fn lex(expr: &str) -> Vec<Term> {
                 Ok(float_value) => float_value,
                 Err(_) => panic!("Failed lexing. NAN: {}.", number_buffer),
             };
-            terms.push(Term::Number(number));
+            tokens.push(Token::Number(number));
             number_buffer.clear();
         } else if c.is_ascii_alphabetic() {
             while let Some(&c) = chars.peek() {
@@ -40,13 +40,13 @@ fn lex(expr: &str) -> Vec<Term> {
                     break;
                 }
             }
-            terms.push(match function_buffer.as_str() {
-                "log" => Term::Function("log".to_string()),
-                "sin" => Term::Function("sin".to_string()),
-                "cos" => Term::Function("cos".to_string()),
-                "tan" => Term::Function("tan".to_string()),
-                "ctg" => Term::Function("ctg".to_string()),
-                "sqrt" => Term::Function("sqrt".to_string()),
+            tokens.push(match function_buffer.as_str() {
+                "log" => Token::Function("log".to_string()),
+                "sin" => Token::Function("sin".to_string()),
+                "cos" => Token::Function("cos".to_string()),
+                "tan" => Token::Function("tan".to_string()),
+                "ctg" => Token::Function("ctg".to_string()),
+                "sqrt" => Token::Function("sqrt".to_string()),
                 _ => panic!(
                     "Failed lexing. Provided inexistent function: {}",
                     function_buffer
@@ -54,10 +54,10 @@ fn lex(expr: &str) -> Vec<Term> {
             });
             function_buffer.clear();
         } else {
-            terms.push(match c {
-                '+' | '-' | '*' | '/' | '^' => Term::Op(c),
-                '(' => Term::LeftParen,
-                ')' => Term::RightParen,
+            tokens.push(match c {
+                '+' | '-' | '*' | '/' | '^' => Token::Op(c),
+                '(' => Token::LeftParen,
+                ')' => Token::RightParen,
                 _ => panic!(
                     "Failed lexing. Provided inexistent operator or parenthesis: {}",
                     c
@@ -66,157 +66,157 @@ fn lex(expr: &str) -> Vec<Term> {
             chars.next();
         }
     }
-    terms
+    tokens
 }
 
-fn infix_to_postfix(terms: Vec<Term>) -> Vec<Term> {
+fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     let mut postfix = Vec::new();
     let mut stack = Vec::new();
 
-    for term in terms {
-        match term {
-            Term::Number(_) => postfix.push(term),
-            Term::Op(_) => {
-                while !stack.is_empty() && (priority(stack.last().unwrap()) >= priority(&term)) {
+    for token in tokens {
+        match token {
+            Token::Number(_) => postfix.push(token),
+            Token::Op(_) => {
+                while !stack.is_empty() && (priority(stack.last().unwrap()) >= priority(&token)) {
                     postfix.push(stack.pop().unwrap());
                 }
-                stack.push(term);
+                stack.push(token);
             }
-            Term::Function(_) => stack.push(term),
-            Term::LeftParen => stack.push(term),
-            Term::RightParen => {
-                while let Some(term) = stack.pop() {
-                    if term == Term::LeftParen {
+            Token::Function(_) => stack.push(token),
+            Token::LeftParen => stack.push(token),
+            Token::RightParen => {
+                while let Some(token) = stack.pop() {
+                    if token == Token::LeftParen {
                         break;
                     }
-                    postfix.push(term);
+                    postfix.push(token);
                 }
-                if let Some(Term::Function(_)) = stack.last() {
+                if let Some(Token::Function(_)) = stack.last() {
                     postfix.push(stack.pop().unwrap());
                 }
             }
         }
     }
 
-    while let Some(term) = stack.pop() {
-        postfix.push(term);
+    while let Some(token) = stack.pop() {
+        postfix.push(token);
     }
 
     postfix
 }
 
-fn priority(op: &Term) -> i32 {
+fn priority(op: &Token) -> i32 {
     match op {
-        Term::Op('+') | Term::Op('-') => 1,
-        Term::Op('*') | Term::Op('/') => 2,
-        Term::Op('^') => 3,
+        Token::Op('+') | Token::Op('-') => 1,
+        Token::Op('*') | Token::Op('/') => 2,
+        Token::Op('^') => 3,
         _ => 0,
     }
 }
 
-fn eval_first(terms: Vec<Term>) -> Vec<Term> {
-    let mut new: Vec<Term> = Vec::new();
-    for i in 0..terms.len() {
-        match terms[i].clone() {
-            Term::Op(c) => {
+fn eval_first(tokens: Vec<Token>) -> Vec<Token> {
+    let mut new: Vec<Token> = Vec::new();
+    for i in 0..tokens.len() {
+        match tokens[i].clone() {
+            Token::Op(c) => {
                 let n2 = match new.pop().unwrap() {
-                    Term::Number(n) => n,
+                    Token::Number(n) => n,
                     _ => panic!("Syntax error"),
                 };
                 let n1 = match new.pop().unwrap() {
-                    Term::Number(n) => n,
+                    Token::Number(n) => n,
                     _ => panic!("Syntax error"),
                 };
                 match c {
-                    '+' => new.push(Term::Number(n1 + n2)),
-                    '-' => new.push(Term::Number(n1 - n2)),
-                    '*' => new.push(Term::Number(n1 * n2)),
-                    '/' => new.push(Term::Number(n1 / n2)),
-                    '^' => new.push(Term::Number(n1.powf(n2))),
+                    '+' => new.push(Token::Number(n1 + n2)),
+                    '-' => new.push(Token::Number(n1 - n2)),
+                    '*' => new.push(Token::Number(n1 * n2)),
+                    '/' => new.push(Token::Number(n1 / n2)),
+                    '^' => new.push(Token::Number(n1.powf(n2))),
                     _ => panic!("Syntax error"),
                 }
-                for term in terms.iter().skip(i + 1) {
-                    new.push(term.clone())
+                for token in tokens.iter().skip(i + 1) {
+                    new.push(token.clone())
                 }
                 return new;
             }
-            Term::Function(func) => {
+            Token::Function(func) => {
                 let n = match new.pop().unwrap() {
-                    Term::Number(num) => num,
+                    Token::Number(num) => num,
                     _ => panic!("Syntax error"),
                 };
                 match func.as_str() {
-                    "log" => new.push(Term::Number(f64::log10(n))),
-                    "sqrt" => new.push(Term::Number(f64::sqrt(n))),
-                    "sin" => new.push(Term::Number(f64::sin(n))),
-                    "cos" => new.push(Term::Number(f64::cos(n))),
-                    "tan" => new.push(Term::Number(f64::tan(n))),
-                    "ctg" => new.push(Term::Number(1.0 / f64::tan(n))),
+                    "log" => new.push(Token::Number(f64::log10(n))),
+                    "sqrt" => new.push(Token::Number(f64::sqrt(n))),
+                    "sin" => new.push(Token::Number(f64::sin(n))),
+                    "cos" => new.push(Token::Number(f64::cos(n))),
+                    "tan" => new.push(Token::Number(f64::tan(n))),
+                    "ctg" => new.push(Token::Number(1.0 / f64::tan(n))),
                     _ => panic!("Syntax error"),
                 }
-                for term in terms.iter().skip(i + 1) {
-                    new.push(term.clone())
+                for token in tokens.iter().skip(i + 1) {
+                    new.push(token.clone())
                 }
                 return new;
             }
-            _ => new.push(terms[i].clone()),
+            _ => new.push(tokens[i].clone()),
         }
     }
 
     new
 }
 
-fn syntax_check(terms: Vec<Term>) {
+fn syntax_check(tokens: Vec<Token>) {
     let mut count = 0;
-    for (i, term) in terms.clone().into_iter().enumerate() {
-        match term {
-            Term::LeftParen => {
+    for (i, token) in tokens.clone().into_iter().enumerate() {
+        match token {
+            Token::LeftParen => {
                 count += 1;
-                if i + 1 == terms.len() {
+                if i + 1 == tokens.len() {
                     panic!("Syntax error. Expression shouldn't end this way.");
                 } else if !matches!(
-                    terms[i + 1],
-                    Term::Number(_) | Term::Function(_) | Term::LeftParen
+                    tokens[i + 1],
+                    Token::Number(_) | Token::Function(_) | Token::LeftParen
                 ) {
                     panic!("Syntax error. Check \'(\'.");
                 }
             }
-            Term::RightParen => {
+            Token::RightParen => {
                 count -= 1;
                 if i == 0 {
                     panic!("Syntax error. Expression shouldn't start this way.");
-                } else if !matches!(terms[i - 1], Term::Number(_) | Term::RightParen) {
+                } else if !matches!(tokens[i - 1], Token::Number(_) | Token::RightParen) {
                     panic!("Syntax error. Check \')\' precedence.");
                 }
-                if i + 1 != terms.len() && !matches!(terms[i + 1], Term::Op(_) | Term::RightParen) {
-                    panic!("Syntax error. Check which terms are used after \')\'.");
+                if i + 1 != tokens.len() && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen) {
+                    panic!("Syntax error. Check which tokens are used after \')\'.");
                 }
             }
 
-            Term::Number(_) => {
-                if i + 1 < terms.len() && !matches!(terms[i + 1], Term::Op(_) | Term::RightParen) {
+            Token::Number(_) => {
+                if i + 1 < tokens.len() && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen) {
                     panic!("Syntax error. Check what comes after numbers.");
                 }
             }
-            Term::Function(_) => {
-                if i + 1 == terms.len() {
+            Token::Function(_) => {
+                if i + 1 == tokens.len() {
                     panic!("Syntax error. Expression shouldn't end this way.");
-                } else if !matches!(terms[i + 1], Term::LeftParen) {
+                } else if !matches!(tokens[i + 1], Token::LeftParen) {
                     panic!("Syntax error. Check what comes after functions.");
                 }
             }
-            Term::Op(_) => {
-                if i == 0 || i + 1 == terms.len() {
+            Token::Op(_) => {
+                if i == 0 || i + 1 == tokens.len() {
                     panic!(
                         "Syntax error. Expression starts or ends in a wrong way. Check operands"
                     );
                 } else {
-                    if !matches!(terms[i - 1], Term::Number(_) | Term::RightParen) {
+                    if !matches!(tokens[i - 1], Token::Number(_) | Token::RightParen) {
                         panic!("Syntax error. Check what comes before operators.");
                     }
                     if !matches!(
-                        terms[i + 1],
-                        Term::Number(_) | Term::Function(_) | Term::LeftParen
+                        tokens[i + 1],
+                        Token::Number(_) | Token::Function(_) | Token::LeftParen
                     ) {
                         panic!("Syntax error. Check what comes after operators.");
                     }
@@ -230,19 +230,19 @@ fn syntax_check(terms: Vec<Term>) {
     }
 }
 
-fn get_infix_string_from_postfix(postfix_tokens: Vec<Term>) -> String {
+fn get_infix_string_from_postfix(postfix_tokens: Vec<Token>) -> String {
     let mut infix: Vec<String> = Vec::new();
 
     for token in postfix_tokens {
         match token {
-            Term::Number(num) => {
+            Token::Number(num) => {
                 infix.push(num.to_string());
             }
-            Term::Function(func) => {
+            Token::Function(func) => {
                 let operand = infix.pop().unwrap();
                 infix.push(format!("{}({})", func, operand));
             }
-            Term::Op(operator) => {
+            Token::Op(operator) => {
                 let operand2 = infix.pop().unwrap();
                 let operand1 = infix.pop().unwrap();
 
