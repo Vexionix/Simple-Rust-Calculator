@@ -197,13 +197,17 @@ fn syntax_check(tokens: Vec<Token>) {
                 } else if !matches!(tokens[i - 1], Token::Number(_) | Token::RightParen) {
                     panic!("Syntax error. Check \')\' precedence.");
                 }
-                if i + 1 != tokens.len() && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen) {
+                if i + 1 != tokens.len()
+                    && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen)
+                {
                     panic!("Syntax error. Check which tokens are used after \')\'.");
                 }
             }
 
             Token::Number(_) => {
-                if i + 1 < tokens.len() && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen) {
+                if i + 1 < tokens.len()
+                    && !matches!(tokens[i + 1], Token::Op(_) | Token::RightParen)
+                {
                     panic!("Syntax error. Check what comes after numbers.");
                 }
             }
@@ -268,10 +272,11 @@ fn get_infix_string_from_postfix(postfix_tokens: Vec<Token>) -> String {
 }
 
 fn main() {
-    let input = "(1 + 2 * sin(2 + sqrt(log(3 / 2))))";
-    syntax_check(lex(input).clone());
-    let mut postfix = infix_to_postfix(lex(input));
-    println!("{} =", input);
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    syntax_check(lex(input.trim()).clone());
+    let mut postfix = infix_to_postfix(lex(input.trim()));
+    println!("{} =", input.trim());
     while postfix.len() > 1 {
         println!("= {}", get_infix_string_from_postfix(postfix.clone()));
         postfix = eval_first(postfix);
