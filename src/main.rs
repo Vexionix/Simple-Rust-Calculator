@@ -230,16 +230,41 @@ fn syntax_check(terms: Vec<Term>) {
     }
 }
 
+fn get_infix_string_from_postfix(postfix_tokens: Vec<Term>) -> String {
+    let mut infix: Vec<String> = Vec::new();
+
+    for token in postfix_tokens {
+        match token {
+            Term::Number(num) => {
+                infix.push(num.to_string());
+            }
+            Term::Function(func) => {
+                let operand = infix.pop().unwrap();
+                infix.push(format!("{}({})", func, operand));
+            }
+            Term::Op(operator) => {
+                let operand2 = infix.pop().unwrap();
+                let operand1 = infix.pop().unwrap();
+
+                infix.push(format!("({} {} {})", operand1, operator, operand2));
+            }
+            _ => {
+                panic!("Invalid postfix expression");
+            }
+        }
+    }
+
+    infix.pop().unwrap()
+}
+
 fn main() {
     let input = "(1 + 2 * sin(2 + sqrt(log(3 / 2))))";
-    let terms = lex(input);
-    syntax_check(terms.clone());
-    let mut postfix = infix_to_postfix(terms.clone());
-    println!("before:   {:?}", terms);
-    println!("after: {:?}", postfix);
+    syntax_check(lex(input).clone());
+    let mut postfix = infix_to_postfix(lex(input));
+    println!("{} =", input);
     while postfix.len() > 1 {
+        println!("= {}", get_infix_string_from_postfix(postfix.clone()));
         postfix = eval_first(postfix);
-        println!();
-        println!("update: {:?}", postfix);
     }
+    println!("= {}", get_infix_string_from_postfix(postfix.clone()));
 }
