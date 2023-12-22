@@ -169,9 +169,94 @@ fn eval_first(terms: Vec<Term>) -> Vec<Term> {
     new
 }
 
+fn syntax_check(terms: Vec<Term>) {
+    let mut count = 0;
+    let mut i = 0;
+    for term in terms.clone() {
+        match term {
+            Term::LeftParen => {
+                count += 1;
+                if i + 1 == terms.len() {
+                    panic!("Syntax error. Expression shouldn't end this way.");
+                } else if !match terms[i + 1] {
+                    Term::Number(_) | Term::Function(_) | Term::LeftParen => true,
+                    _ => false,
+                } {
+                    panic!("Syntax error. Check \'(\'.");
+                }
+            }
+            Term::RightParen => {
+                count -= 1;
+                if i == 0 {
+                    panic!("Syntax error. Expression shouldn't start this way.");
+                } else if !match terms[i - 1] {
+                    Term::Number(_) | Term::RightParen => true,
+                    _ => false,
+                } {
+                    panic!("Syntax error. Check \')\' precedence.");
+                }
+                if i + 1 != terms.len() {
+                    if !match terms[i + 1] {
+                        Term::Op(_) | Term::RightParen => true,
+                        _ => false,
+                    } {
+                        panic!("Syntax error. Check which terms are used after \')\'.");
+                    }
+                }
+            }
+            Term::Number(_) => {
+                if i + 1 < terms.len() {
+                    if !match terms[i + 1] {
+                        Term::Op(_) | Term::RightParen => true,
+                        _ => false,
+                    } {
+                        panic!("Syntax error. Check what comes after numbers.");
+                    }
+                }
+            }
+            Term::Function(_) => {
+                if i + 1 == terms.len() {
+                    panic!("Syntax error. Expression shouldn't end this way.");
+                } else if !match terms[i + 1] {
+                    Term::LeftParen => true,
+                    _ => false,
+                } {
+                    panic!("Syntax error. Check what comes after functions.");
+                }
+            }
+            Term::Op(_) => {
+                if i == 0 || i + 1 == terms.len() {
+                    panic!(
+                        "Syntax error. Expression starts or ends in a wrong way. Check operands"
+                    );
+                } else {
+                    if !match terms[i - 1] {
+                        Term::Number(_) | Term::RightParen => true,
+                        _ => false,
+                    } {
+                        panic!("Syntax error. Check what comes before operators.");
+                    }
+                    if !match terms[i + 1] {
+                        Term::Number(_) | Term::Function(_) | Term::LeftParen => true,
+                        _ => false,
+                    } {
+                        panic!("Syntax error. Check what comes after operators.");
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+
+    if count != 0 {
+        panic!("Syntax error. Parenthesis number is not equal.");
+    }
+}
+
 fn main() {
-    let input = "1 + 2 * sin((((2 + sqrt(log(3 / 2)))))) + 3 * 2";
+    let input = "(1 + 2 * sin(2 + sqrt(log(3 / 2))))";
     let terms = lex(input);
+    syntax_check(terms.clone());
     let mut postfix = infix_to_postfix(terms.clone());
     println!("before:   {:?}", terms);
     println!("after: {:?}", postfix);
